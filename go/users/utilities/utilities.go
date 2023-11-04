@@ -5,6 +5,7 @@ import (
 
 	"github.com/amirul-zafrin/event-ticketing/users.git/database"
 	"github.com/amirul-zafrin/event-ticketing/users.git/models"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func GetBasedResponseObject() map[string]interface{} {
@@ -28,4 +29,12 @@ func FindUserByEmail(email string, user *models.User) error {
 		return errors.New("user does not exists")
 	}
 	return nil
+}
+
+func HashPassword(password string) (string, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hashedPassword), nil
 }

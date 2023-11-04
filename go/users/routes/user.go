@@ -41,6 +41,7 @@ func CreateUser(c *fiber.Ctx) error {
 	if err := utilities.FindUserByEmail(user.Email, &user); err == nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(errors.ErrEmailAlreadyUsed.Error())
 	} else {
+		user.Password, _ = utilities.HashPassword(user.Password)
 		if err := database.Database.Db.Create(&user).Error; err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(err)
 		}
@@ -122,7 +123,7 @@ func DeleteUser(c *fiber.Ctx) error {
 	var user models.User
 
 	if err != nil {
-		return c.Status(400).JSON("Pleaseensure that :id is an integer")
+		return c.Status(400).JSON("Please ensure that :id is an integer")
 	}
 
 	if err := utilities.FindUser(id, &user); err != nil {
