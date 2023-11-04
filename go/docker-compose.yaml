@@ -1,0 +1,9 @@
+version: '3.8'
+services:
+  web_blog:
+    container_name: users
+    build:
+      context: ./users
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3001
