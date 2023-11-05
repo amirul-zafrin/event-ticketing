@@ -29,7 +29,6 @@ func CreateResponseUser(userModel models.User) UserResponse {
 }
 
 func CreateUser(c *fiber.Ctx) error {
-	// response := utilities.GetBasedResponseObject()
 	var user models.User
 
 	if err := c.BodyParser(&user); err != nil {
@@ -45,9 +44,9 @@ func CreateUser(c *fiber.Ctx) error {
 		if err := database.Database.Db.Create(&user).Error; err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(err)
 		}
-		responseUser := CreateResponseUser(user)
-		return c.Status(200).JSON(responseUser)
 	}
+	responseUser := CreateResponseUser(user)
+	return c.Status(200).JSON(responseUser)
 }
 
 func GetUsers(c *fiber.Ctx) error {

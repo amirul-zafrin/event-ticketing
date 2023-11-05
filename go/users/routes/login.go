@@ -27,6 +27,17 @@ func UserLogin(c *fiber.Ctx) error {
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginCredential.Password)); err != nil {
 		return c.Status(fiber.StatusUnauthorized).SendString("Invalid credentials")
 	}
+	token, err := utilities.GenerateJWT(&user)
+	if err != nil {
+		c.Status(fiber.StatusInternalServerError).JSON(err)
+	}
+
+	cookie := fiber.Cookie{
+		Name:  "jwt",
+		Value: token,
+	}
+
+	c.Cookie(&cookie)
 	responseUser := CreateResponseUser(user)
 	return c.Status(200).JSON(responseUser)
 }

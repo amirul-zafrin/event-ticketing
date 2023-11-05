@@ -6,6 +6,8 @@ import (
 	"github.com/amirul-zafrin/event-ticketing/users.git/database"
 	"github.com/amirul-zafrin/event-ticketing/users.git/routes"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 )
 
 func welcome(c *fiber.Ctx) error {
@@ -25,6 +27,10 @@ func setupRoutes(app *fiber.App) {
 func main() {
 	database.ConnectDB()
 	app := fiber.New()
+	app.Use(logger.New())
+	app.Use(cors.New(cors.Config{
+		AllowCredentials: true, // Use this when using HTTPOnly Cookie
+	}))
 
 	setupRoutes(app)
 

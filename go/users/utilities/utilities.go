@@ -2,9 +2,11 @@ package utilities
 
 import (
 	"errors"
+	"time"
 
 	"github.com/amirul-zafrin/event-ticketing/users.git/database"
 	"github.com/amirul-zafrin/event-ticketing/users.git/models"
+	jtoken "github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -37,4 +39,16 @@ func HashPassword(password string) (string, error) {
 		return "", err
 	}
 	return string(hashedPassword), nil
+}
+
+func GenerateJWT(user *models.User) (string, error) {
+	day := time.Hour * 24
+	claims := jtoken.MapClaims{
+		"ID":    user.ID,
+		"email": user.Email,
+		"exp":   time.Now().Add(day * 1).Unix(),
+	}
+	const SecretKey = "secret"
+	token := jtoken.NewWithClaims(jtoken.SigningMethodHS256, claims)
+	return token.SignedString([]byte(SecretKey))
 }
