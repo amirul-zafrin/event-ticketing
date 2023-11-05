@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"time"
+
 	"github.com/amirul-zafrin/event-ticketing/users.git/models"
 	"github.com/amirul-zafrin/event-ticketing/users.git/utilities"
 	"github.com/gofiber/fiber/v2"
@@ -33,11 +35,31 @@ func UserLogin(c *fiber.Ctx) error {
 	}
 
 	cookie := fiber.Cookie{
-		Name:  "jwt",
-		Value: token,
+		Name:     "jwt",
+		Value:    token,
+		HTTPOnly: true,
 	}
 
 	c.Cookie(&cookie)
 	responseUser := CreateResponseUser(user)
 	return c.Status(200).JSON(responseUser)
+}
+
+func UserLogout(c *fiber.Ctx) error {
+	expired := time.Now().Add(-time.Hour * 24)
+
+	cookie := fiber.Cookie{
+		Name:     "",
+		Value:    "",
+		Expires:  expired,
+		HTTPOnly: true,
+	}
+	c.Cookie(&cookie)
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"status": "success"})
+}
+
+func GetMe(c *fiber.Ctx) error {
+	user := c.Locals("user").(UserResponse)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"status": "success", "data": fiber.Map{"user": user}})
 }
