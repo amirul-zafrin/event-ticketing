@@ -59,7 +59,7 @@ func UserLogout(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"status": "success"})
 }
 
-func GetMe(c *fiber.Ctx) error {
+func WhoAmI(c *fiber.Ctx) error {
 	user := c.Locals("user").(UserResponse)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"status": "success", "data": fiber.Map{"user": user}})
 }

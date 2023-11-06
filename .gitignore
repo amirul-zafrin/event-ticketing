@@ -2,3 +2,8 @@
 *.db
 
  tmp/
+ **/tmp/
+
+ .env
+
+ .vscode/

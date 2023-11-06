@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/amirul-zafrin/event-ticketing/users.git/database"
+	"github.com/amirul-zafrin/event-ticketing/users.git/middlewares"
 	"github.com/amirul-zafrin/event-ticketing/users.git/routes"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -22,6 +23,8 @@ func setupRoutes(app *fiber.App) {
 	app.Put("/api/users/:id", routes.UpdateUser)
 	app.Delete("/api/users/:id", routes.DeleteUser)
 	app.Post("/api/login", routes.UserLogin)
+	app.Get("/api/logout", routes.UserLogout)
+	app.Get("/api/whoami", middlewares.DeserializeUser, routes.WhoAmI)
 }
 
 func main() {
