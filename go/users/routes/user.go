@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"time"
+
 	"github.com/amirul-zafrin/event-ticketing/users.git/database"
 	"github.com/amirul-zafrin/event-ticketing/users.git/errors"
 	"github.com/amirul-zafrin/event-ticketing/users.git/models"
@@ -8,13 +10,6 @@ import (
 	"github.com/amirul-zafrin/event-ticketing/users.git/validators"
 	"github.com/gofiber/fiber/v2"
 )
-
-// type User struct {
-// 	FirstName string `json:"first_name" validate:"required"`
-// 	LastName  string `json:"last_name" validate:"required"`
-// 	Email     string `json:"email" validate:"required,email"`
-// 	Password  string `json:"password" validate:"required"`
-// }
 
 type UserResponse struct {
 	ID        uint   `json:"id"`
@@ -119,14 +114,12 @@ func UpdateUser(c *fiber.Ctx) error {
 
 	user.FirstName = updateData.FirstName
 	user.LastName = updateData.LastName
-	// TODO: Dont update if the value nil
 	user.Email = updateData.Email
 	user.Password = updateData.Password
 
-	database.Database.Db.Save(&user)
+	database.Database.Db.Updates(&user)
 
-	responseUser := CreateResponseUser(user)
-	return c.Status(200).JSON(responseUser)
+	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "user updated!"})
 }
 
 func DeleteUser(c *fiber.Ctx) error {
@@ -145,9 +138,6 @@ func DeleteUser(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "failed", "message": err.Error()})
 	}
 
-	if err := database.Database.Db.Delete(&user).Error; err != nil {
-		return c.Status(404).JSON(err.Error())
-	}
-
+	database.Database.Db.Model(&user).Update("deleted_at", time.Now())
 	return c.Status(200).SendString("Delete Success!")
 }
