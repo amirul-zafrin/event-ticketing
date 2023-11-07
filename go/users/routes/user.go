@@ -9,23 +9,24 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type User struct {
-	FirstName string `json:"first_name" validate:"required"`
-	LastName  string `json:"last_name" validate:"required"`
-	Email     string `json:"email" validate:"required,email"`
-	Password  string `json:"password" validate:"required"`
-}
+// type User struct {
+// 	FirstName string `json:"first_name" validate:"required"`
+// 	LastName  string `json:"last_name" validate:"required"`
+// 	Email     string `json:"email" validate:"required,email"`
+// 	Password  string `json:"password" validate:"required"`
+// }
 
 type UserResponse struct {
 	ID        uint   `json:"id"`
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 	Email     string `json:"email"`
+	Admin     bool   `json:"admin"`
 }
 
 func CreateResponseUser(userModel models.User) UserResponse {
 	return UserResponse{ID: userModel.ID, FirstName: userModel.FirstName,
-		LastName: userModel.LastName, Email: userModel.Email}
+		LastName: userModel.LastName, Email: userModel.Email, Admin: userModel.Admin}
 }
 
 func CreateUser(c *fiber.Ctx) error {
@@ -50,6 +51,9 @@ func CreateUser(c *fiber.Ctx) error {
 }
 
 func GetUsers(c *fiber.Ctx) error {
+	if err := utilities.Authorization(c); err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "failed", "message": err.Error()})
+	}
 	users := []models.User{}
 
 	database.Database.Db.Find(&users)
@@ -75,6 +79,10 @@ func GetUser(c *fiber.Ctx) error {
 		return c.Status(400).JSON(err.Error())
 	}
 
+	if err := utilities.Authorization(c, &user); err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "failed", "message": err.Error()})
+	}
+
 	responseUser := CreateResponseUser(user)
 
 	return c.Status(200).JSON(responseUser)
@@ -90,6 +98,10 @@ func UpdateUser(c *fiber.Ctx) error {
 
 	if err := utilities.FindUser(id, &user); err != nil {
 		return c.Status(400).JSON(err.Error())
+	}
+
+	if err := utilities.Authorization(c, &user); err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "failed", "message": err.Error()})
 	}
 
 	type UpdateUser struct {
@@ -127,6 +139,10 @@ func DeleteUser(c *fiber.Ctx) error {
 
 	if err := utilities.FindUser(id, &user); err != nil {
 		return c.Status(400).JSON(err.Error())
+	}
+
+	if err := utilities.Authorization(c, &user); err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "failed", "message": err.Error()})
 	}
 
 	if err := database.Database.Db.Delete(&user).Error; err != nil {

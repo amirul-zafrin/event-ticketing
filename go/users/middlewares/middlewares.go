@@ -7,7 +7,6 @@ import (
 	"github.com/amirul-zafrin/event-ticketing/users.git/config"
 	"github.com/amirul-zafrin/event-ticketing/users.git/database"
 	"github.com/amirul-zafrin/event-ticketing/users.git/models"
-	"github.com/amirul-zafrin/event-ticketing/users.git/routes"
 	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -21,12 +20,12 @@ func AuthMiddleware(secret string) fiber.Handler {
 
 func DeserializeUser(c *fiber.Ctx) error {
 	var tokenString string
-	authorization := c.Get("Authorization")
+	authorization := c.Get("Authorization", "")
 
 	if strings.HasPrefix(authorization, "Bearer ") {
 		tokenString = strings.TrimPrefix(authorization, "Bearer ")
-	} else if c.Cookies("token") != "" {
-		tokenString = c.Cookies("token")
+	} else if c.Cookies("jwt") != "" {
+		tokenString = c.Cookies("jwt")
 	}
 
 	if tokenString == "" {
@@ -57,6 +56,6 @@ func DeserializeUser(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"status": "fail", "message": "the user belonging to this token no logger exists"})
 	}
 
-	c.Locals("user", routes.CreateResponseUser(user))
+	c.Locals("user", user)
 	return c.Next()
 }

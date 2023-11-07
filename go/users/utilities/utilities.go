@@ -6,6 +6,7 @@ import (
 
 	"github.com/amirul-zafrin/event-ticketing/users.git/database"
 	"github.com/amirul-zafrin/event-ticketing/users.git/models"
+	"github.com/gofiber/fiber/v2"
 	jtoken "github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -51,4 +52,25 @@ func GenerateJWT(user *models.User) (string, error) {
 	const SecretKey = "secret"
 	token := jtoken.NewWithClaims(jtoken.SigningMethodHS256, claims)
 	return token.SignedString([]byte(SecretKey))
+}
+
+func Authorization(c *fiber.Ctx, users ...*models.User) error {
+	thisUser := c.Locals("user").(models.User)
+	if thisUser.Admin {
+		return nil
+	}
+
+	var found bool
+	for _, user := range users {
+		if user.ID == thisUser.ID {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return errors.New("user don't have access permission")
+	}
+
+	return nil
 }

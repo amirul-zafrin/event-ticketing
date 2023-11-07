@@ -60,6 +60,6 @@ func UserLogout(c *fiber.Ctx) error {
 }
 
 func WhoAmI(c *fiber.Ctx) error {
-	user := c.Locals("user").(UserResponse)
+	user := c.Locals("user")
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"status": "success", "data": fiber.Map{"user": user}})
 }
