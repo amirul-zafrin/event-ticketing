@@ -19,6 +19,9 @@ func setupRoutes(app *fiber.App) {
 	app.Put("/api/event/:id", routes.UpdateEvent)
 	app.Delete("/api/event/:id", routes.DeleteEvent)
 	app.Delete("/api/event/permanent/:id", routes.PermanentDeleteEvent)
+	app.Get("/api/event", routes.GetEvents)
+	app.Get("/api/event/:id", routes.GetEvent)
+	app.Post("/api/event/:id/seats", routes.SetSeatCategory)
 }
 
 func main() {
