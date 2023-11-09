@@ -9,6 +9,12 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+type Seats struct {
+	NumStart int    `json:"num_start"`
+	NumEnd   int    `json:"num_end"`
+	Class    string `json:"class"`
+}
+
 func CreateEvent(c *fiber.Ctx) error {
 	var event models.Events
 
@@ -29,6 +35,36 @@ func CreateEvent(c *fiber.Ctx) error {
 	return c.Status(200).JSON(fiber.Map{"status": "success", "message": event})
 }
 
+func GetEvents(c *fiber.Ctx) error {
+	events := []models.Events{}
+
+	database.Database.Db.Preload("Prices").Find(&events, "deleted_at IS NULL")
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"status": "success", "message": events})
+}
+
+func GetEvent(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id")
+
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "failed",
+			"message": err,
+		})
+	}
+	var event models.Events
+	if err := utilities.FindEvent(id, &event); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "failed",
+			"message": err,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "success",
+		"message": event,
+	})
+}
 func UpdateEvent(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 
@@ -122,4 +158,38 @@ func PermanentDeleteEvent(c *fiber.Ctx) error {
 		"status":  "success",
 		"message": "Event deleted permanently",
 	})
+}
+
+func SetSeatCategory(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id")
+
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "failed", "message": err})
+	}
+
+	var event models.Events
+	if err := utilities.FindEvent(id, &event); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "failed",
+			"message": err,
+		})
+	}
+
+	var seats Seats
+	if err := c.BodyParser(&seats); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "failed",
+			"message": err,
+		})
+	}
+
+	setSeat := utilities.GenerateSeats(seats.NumStart, seats.NumEnd, seats.Class)
+	utilities.MergeMap(event.Seats, setSeat)
+	database.Database.Db.Save(&event)
+
+	return c.Status(fiber.StatusAccepted).JSON(fiber.Map{
+		"status":  "success",
+		"message": event,
+	})
+
 }
