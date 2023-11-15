@@ -1,12 +1,15 @@
 package utilities
 
 import (
+	"encoding/json"
 	"errors"
+	"log"
 	"strconv"
 
 	"github.com/amirul-zafrin/event-ticketing/events.git/constants"
 	"github.com/amirul-zafrin/event-ticketing/events.git/database"
 	"github.com/amirul-zafrin/event-ticketing/events.git/models"
+	"github.com/amirul-zafrin/event-ticketing/events.git/services"
 )
 
 func FindEvent(id int, event *models.Events) error {
@@ -40,4 +43,39 @@ func MergeMap(n, m map[string]interface{}) {
 	for k, v := range m {
 		n[k] = v
 	}
+}
+
+func UpdateSeat(opt *services.LockingRequest) error {
+	event := models.Events{}
+	if err := FindEvent(opt.EventID, &event); err != nil {
+		log.Printf("Failed to update seat: %s", err)
+		return err
+	}
+	if event.Seats == nil {
+		return errors.New("no seat category were set")
+	}
+	var resultMap map[string][]int
+	jsonbytes, err := opt.Details.MarshalJSON()
+	if err != nil {
+		log.Printf("Error when marshalling")
+		return err
+	}
+	err = json.Unmarshal(jsonbytes, &resultMap)
+	if err != nil {
+		log.Printf("Error when unmarshalling")
+		return err
+	}
+	status := "locked"
+	if opt.IsPaid {
+		status = "occupied"
+	}
+	for _, element := range resultMap {
+		for _, val := range element {
+			if seatInfo, isMap := event.Seats[strconv.Itoa(val)].(map[string]interface{}); isMap {
+				seatInfo["status"] = status
+			}
+		}
+	}
+	database.Database.Db.Save(&event)
+	return nil
 }
