@@ -15,8 +15,8 @@ func ping(c *fiber.Ctx) error {
 
 func setupRoutes(app *fiber.App) {
 	app.Get("/api", ping)
-	app.Post("/api/event", routes.CreateOrder)
-	app.Put("/api/event/:id", routes.UpdateOrder)
+	app.Post("/api/order", routes.CreateOrder, routes.UpdateEventSeatRMQ)
+	app.Put("/api/order/:id", routes.UpdateOrder, routes.UpdateEventSeatRMQ)
 }
 func main() {
 	database.ConnectDB()
