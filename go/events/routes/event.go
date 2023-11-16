@@ -184,7 +184,7 @@ func SetSeatCategory(c *fiber.Ctx) error {
 	}
 
 	setSeat := utilities.GenerateSeats(seats.NumStart, seats.NumEnd, seats.Class)
-	utilities.MergeMap(event.Seats, setSeat)
+	utilities.MergeMap(&event.Seats, &setSeat)
 	database.Database.Db.Save(&event)
 
 	return c.Status(fiber.StatusAccepted).JSON(fiber.Map{

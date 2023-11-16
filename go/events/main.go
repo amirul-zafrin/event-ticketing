@@ -9,7 +9,6 @@ import (
 	"github.com/amirul-zafrin/event-ticketing/events.git/database"
 	"github.com/amirul-zafrin/event-ticketing/events.git/routes"
 	"github.com/amirul-zafrin/event-ticketing/events.git/services"
-	"github.com/amirul-zafrin/event-ticketing/events.git/utilities"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 )
@@ -39,7 +38,15 @@ func main() {
 		if err != nil {
 			log.Printf("Error connecting to RabbitMQ: %s", err)
 		}
-		rmq.ConsumeUpdate("seat_requests", utilities.UpdateSeat)
+		rmq.ConsumeUpdate("seat_requests", services.UpdateSeat)
+	}()
+
+	go func() {
+		rmq, err := services.NewRabbitMQ("amqp://guest:guest@127.0.0.1:5672/")
+		if err != nil {
+			log.Printf("Error connecting to RabbitMQ: %s", err)
+		}
+		rmq.RMQReply("total_price_rmq", services.GetTotalPrices)
 	}()
 
 	go func() {
