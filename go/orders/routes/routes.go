@@ -55,9 +55,21 @@ func UpdateEventSeatRMQ(c *fiber.Ctx) error {
 	log.Println("Trying to publish!")
 	err := rmq.PublishUpdateSeatStatus(&updateReq, "seat_requests")
 	if err != nil {
-		log.Println("Failed to publish seat update request: %s", err)
+		log.Printf("Failed to publish seat update request: %s", err)
 		return err
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"status": "success", "message": order})
+}
+
+func TotalPriceService(c *fiber.Ctx) error {
+	order := c.Locals("order").(models.Orders)
+	updateReq := services.LockingRequest{EventID: int(order.EventID), IsPaid: order.IsPaid, Details: order.Details}
+	res, err := services.GetTotalAmount(&updateReq)
+	if err != nil {
+		log.Printf("Error Getting Total Amount: %s", err)
+	}
+	order.TotalAmount = res
+	c.Locals("order", order)
+	return c.Next()
 }
