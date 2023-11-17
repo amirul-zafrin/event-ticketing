@@ -11,3 +11,8 @@ go get -u gorm.io/driver/sqlite
 ```
 go install github.com/cosmtrek/air@latest
 ```
+
+## RabbitMQ
+### As Publish/Subscribe
+
+### As RPC
