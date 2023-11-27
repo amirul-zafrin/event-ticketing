@@ -46,3 +46,8 @@ func RandomDate() time.Time {
 func RandomLocation() string {
 	return fmt.Sprintf("%s %s", RandomString(6), RandomString(9))
 }
+
+func RandomClass() string {
+	class := []string{"Elite", "Mid", "Normal"}
+	return class[rand.Intn(len(class))]
+}
