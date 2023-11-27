@@ -5,27 +5,30 @@
 package db
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
+	"database/sql"
+	"time"
+
+	"github.com/sqlc-dev/pqtype"
 )
 
 type Event struct {
-	ID        int32            `json:"id"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
-	UpdatedAt pgtype.Timestamp `json:"updated_at"`
-	DeletedAt pgtype.Timestamp `json:"deleted_at"`
-	Name      pgtype.Text      `json:"name"`
-	Date      pgtype.Timestamp `json:"date"`
-	Location  pgtype.Text      `json:"location"`
-	Capacity  pgtype.Int4      `json:"capacity"`
-	Seats     []byte           `json:"seats"`
+	ID        int64                 `json:"id"`
+	CreatedAt time.Time             `json:"created_at"`
+	UpdatedAt sql.NullTime          `json:"updated_at"`
+	DeletedAt sql.NullTime          `json:"deleted_at"`
+	Name      string                `json:"name"`
+	Date      sql.NullTime          `json:"date"`
+	Location  string                `json:"location"`
+	Capacity  int32                 `json:"capacity"`
+	Seats     pqtype.NullRawMessage `json:"seats"`
 }
 
 type Price struct {
-	ID        int32            `json:"id"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
-	UpdatedAt pgtype.Timestamp `json:"updated_at"`
-	DeletedAt pgtype.Timestamp `json:"deleted_at"`
-	Class     pgtype.Text      `json:"class"`
-	Price     pgtype.Float8    `json:"price"`
-	Event     pgtype.Int4      `json:"event"`
+	ID        int64        `json:"id"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt sql.NullTime `json:"updated_at"`
+	DeletedAt sql.NullTime `json:"deleted_at"`
+	Class     string       `json:"class"`
+	Price     float64      `json:"price"`
+	Event     int32        `json:"event"`
 }

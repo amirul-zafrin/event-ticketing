@@ -10,6 +10,12 @@ import (
 
 type Querier interface {
 	CreateEvent(ctx context.Context, arg CreateEventParams) (Event, error)
+	GetEvent(ctx context.Context, id int64) (Event, error)
+	ListAllEvents(ctx context.Context, arg ListAllEventsParams) ([]Event, error)
+	PermaDeleteEvent(ctx context.Context, id int64) error
+	SoftDeleteEvent(ctx context.Context, id int64) error
+	UpdateEvent(ctx context.Context, arg UpdateEventParams) (Event, error)
+	UpdateEventSeat(ctx context.Context, arg UpdateEventSeatParams) (Event, error)
 }
 
 var _ Querier = (*Queries)(nil)

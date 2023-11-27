@@ -7,8 +7,9 @@ package db
 
 import (
 	"context"
+	"database/sql"
 
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/sqlc-dev/pqtype"
 )
 
 const createEvent = `-- name: CreateEvent :one
@@ -21,19 +22,165 @@ RETURNING id, created_at, updated_at, deleted_at, name, date, location, capacity
 `
 
 type CreateEventParams struct {
-	Name     pgtype.Text      `json:"name"`
-	Date     pgtype.Timestamp `json:"date"`
-	Location pgtype.Text      `json:"location"`
-	Capacity pgtype.Int4      `json:"capacity"`
+	Name     string       `json:"name"`
+	Date     sql.NullTime `json:"date"`
+	Location string       `json:"location"`
+	Capacity int32        `json:"capacity"`
 }
 
 func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (Event, error) {
-	row := q.db.QueryRow(ctx, createEvent,
+	row := q.db.QueryRowContext(ctx, createEvent,
 		arg.Name,
 		arg.Date,
 		arg.Location,
 		arg.Capacity,
 	)
+	var i Event
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.Name,
+		&i.Date,
+		&i.Location,
+		&i.Capacity,
+		&i.Seats,
+	)
+	return i, err
+}
+
+const getEvent = `-- name: GetEvent :one
+SELECT id, created_at, updated_at, deleted_at, name, date, location, capacity, seats FROM events
+WHERE id = $1 LIMIT 1
+`
+
+func (q *Queries) GetEvent(ctx context.Context, id int64) (Event, error) {
+	row := q.db.QueryRowContext(ctx, getEvent, id)
+	var i Event
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.Name,
+		&i.Date,
+		&i.Location,
+		&i.Capacity,
+		&i.Seats,
+	)
+	return i, err
+}
+
+const listAllEvents = `-- name: ListAllEvents :many
+SELECT id, created_at, updated_at, deleted_at, name, date, location, capacity, seats FROM events
+ORDER by id
+LIMIT $1
+OFFSET $2
+`
+
+type ListAllEventsParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListAllEvents(ctx context.Context, arg ListAllEventsParams) ([]Event, error) {
+	rows, err := q.db.QueryContext(ctx, listAllEvents, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Event{}
+	for rows.Next() {
+		var i Event
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+			&i.Name,
+			&i.Date,
+			&i.Location,
+			&i.Capacity,
+			&i.Seats,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const permaDeleteEvent = `-- name: PermaDeleteEvent :exec
+DELETE FROM events
+WHERE id = $1
+`
+
+func (q *Queries) PermaDeleteEvent(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, permaDeleteEvent, id)
+	return err
+}
+
+const softDeleteEvent = `-- name: SoftDeleteEvent :exec
+UPDATE events
+SET delted_at = NOW()
+WHERE id = $1
+`
+
+func (q *Queries) SoftDeleteEvent(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, softDeleteEvent, id)
+	return err
+}
+
+const updateEvent = `-- name: UpdateEvent :one
+UPDATE events
+SET name = $2
+WHERE id = $1
+RETURNING id, created_at, updated_at, deleted_at, name, date, location, capacity, seats
+`
+
+type UpdateEventParams struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+func (q *Queries) UpdateEvent(ctx context.Context, arg UpdateEventParams) (Event, error) {
+	row := q.db.QueryRowContext(ctx, updateEvent, arg.ID, arg.Name)
+	var i Event
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.Name,
+		&i.Date,
+		&i.Location,
+		&i.Capacity,
+		&i.Seats,
+	)
+	return i, err
+}
+
+const updateEventSeat = `-- name: UpdateEventSeat :one
+UPDATE events
+SET seats = $2
+WHERE id = $1
+RETURNING id, created_at, updated_at, deleted_at, name, date, location, capacity, seats
+`
+
+type UpdateEventSeatParams struct {
+	ID    int64                 `json:"id"`
+	Seats pqtype.NullRawMessage `json:"seats"`
+}
+
+func (q *Queries) UpdateEventSeat(ctx context.Context, arg UpdateEventSeatParams) (Event, error) {
+	row := q.db.QueryRowContext(ctx, updateEventSeat, arg.ID, arg.Seats)
 	var i Event
 	err := row.Scan(
 		&i.ID,

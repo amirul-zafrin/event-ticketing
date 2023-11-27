@@ -1,23 +1,23 @@
 CREATE TABLE "events" (
-  "id" integer PRIMARY KEY,
-  "created_at" timestamp,
+  "id" bigserial PRIMARY KEY,
+  "created_at" timestamp NOT NULL DEFAULT 'now()',
   "updated_at" timestamp,
   "deleted_at" timestamp,
-  "name" varchar,
+  "name" varchar NOT NULL,
   "date" timestamp,
-  "location" varchar,
-  "capacity" integer,
-  "seats" JSON
+  "location" varchar NOT NULL,
+  "capacity" integer NOT NULL,
+  "seats" JSONB
 );
 
 CREATE TABLE "prices" (
-  "id" integer PRIMARY KEY,
-  "created_at" timestamp,
+  "id" bigserial PRIMARY KEY,
+  "created_at" timestamp NOT NULL DEFAULT 'now()',
   "updated_at" timestamp,
   "deleted_at" timestamp,
-  "class" varchar,
-  "price" float,
-  "event" int
+  "class" varchar NOT NULL,
+  "price" float NOT NULL,
+  "event" int NOT NULL
 );
 
 ALTER TABLE "prices" ADD FOREIGN KEY ("event") REFERENCES "events" ("id");
