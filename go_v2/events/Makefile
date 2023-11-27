@@ -12,6 +12,14 @@ dropdb:
 migrateup:
 	migrate -path db/migrations -database "$(DB_URL)" -verbose up
 
+
+migratedown:
+	migrate -path db/migrations -database "$(DB_URL)" -verbose down
+
 sqlc:
 	sqlc generate
-phony: postgres createdb dropdb migrateup sqlc
+
+test:
+	go test -v -cover -race ./...
+
+phony: postgres createdb dropdb migrateup migratedown sqlc test
