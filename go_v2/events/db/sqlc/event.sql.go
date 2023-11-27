@@ -129,7 +129,7 @@ func (q *Queries) PermaDeleteEvent(ctx context.Context, id int64) error {
 
 const softDeleteEvent = `-- name: SoftDeleteEvent :exec
 UPDATE events
-SET delted_at = NOW()
+SET deleted_at = NOW()
 WHERE id = $1
 `
 
@@ -140,7 +140,8 @@ func (q *Queries) SoftDeleteEvent(ctx context.Context, id int64) error {
 
 const updateEvent = `-- name: UpdateEvent :one
 UPDATE events
-SET name = $2
+SET name = $2,
+    updated_at = NOW()
 WHERE id = $1
 RETURNING id, created_at, updated_at, deleted_at, name, date, location, capacity, seats
 `

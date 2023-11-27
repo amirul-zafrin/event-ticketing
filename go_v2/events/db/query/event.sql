@@ -24,13 +24,14 @@ OFFSET $2;
 
 -- name: UpdateEvent :one
 UPDATE events
-SET name = $2
+SET name = $2,
+    updated_at = NOW()
 WHERE id = $1
 RETURNING *;
 
 -- name: SoftDeleteEvent :exec
 UPDATE events
-SET delted_at = NOW()
+SET deleted_at = NOW()
 WHERE id = $1;
 
 -- name: PermaDeleteEvent :exec
