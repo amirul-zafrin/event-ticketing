@@ -22,4 +22,7 @@ sqlc:
 test:
 	go test -v -cover -race ./...
 
-phony: postgres createdb dropdb migrateup migratedown sqlc test
+run:
+	air
+
+phony: postgres createdb dropdb migrateup migratedown sqlc test run
