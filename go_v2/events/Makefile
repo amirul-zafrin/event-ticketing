@@ -25,4 +25,7 @@ test:
 run:
 	air
 
+mock:
+	mockgen -destination db/mock/store.go -package mockdb github.com/amirul-zafrin/event/db/sqlc Store
+
 phony: postgres createdb dropdb migrateup migratedown sqlc test run
