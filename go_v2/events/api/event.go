@@ -1,33 +1,42 @@
 package api
 
 import (
-	"log"
-
 	db "github.com/amirul-zafrin/event/db/sqlc"
 	"github.com/gofiber/fiber/v2"
 )
 
-type Server struct {
-	store  *db.Queries
-	router *fiber.App
-}
+func (server *Server) CreateEvent(c *fiber.Ctx) error {
+	params := db.CreateEventParams{}
 
-func SetupRoutes(app *fiber.App) {
-	app.Get("/ping", func(c *fiber.Ctx) error {
-		return c.Status(fiber.StatusOK).JSON(fiber.Map{"status": "success", "message": "Ping!"})
+	if err := c.BodyParser(params); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(err)
+	}
+
+	event, err := server.store.CreateEvent(c.Context(), params)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(err)
+	}
+
+	return c.Status(200).JSON(fiber.Map{
+		"status":  "success",
+		"message": event,
 	})
+
 }
 
-func NewServer(store *db.Queries) *Server {
-	server := &Server{store: store}
-	router := fiber.New()
+func (server *Server) GetEvent(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(err)
+	}
 
-	SetupRoutes(router)
+	event, err := server.store.GetEvent(c.Context(), int64(id))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(err)
+	}
 
-	server.router = router
-	return server
-}
-
-func (server *Server) Start(address string) {
-	log.Fatal(server.router.Listen(address))
+	return c.Status(200).JSON(fiber.Map{
+		"status":  "success",
+		"message": event,
+	})
 }
