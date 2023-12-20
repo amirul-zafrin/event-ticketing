@@ -2,7 +2,9 @@ package api
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"testing"
 
@@ -16,27 +18,62 @@ import (
 func TestGetAccount(t *testing.T) {
 	event := RandomEvent()
 
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	testCases := []struct {
+		name          string
+		eventID       int64
+		buildStubs    func(store *mockdb.MockStore)
+		checkResponse func(t *testing.T, recorder *http.Response)
+	}{
+		{
+			name:    "OK",
+			eventID: event.ID,
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetEvent(gomock.Any(), gomock.Eq(event.ID)).
+					Times(1).
+					Return(event, nil)
+			},
+			checkResponse: func(t *testing.T, recorder *http.Response) {
+				require.Equal(t, http.StatusOK, recorder.StatusCode)
+				requireBodyMatch(t, &recorder.Body, event)
+			},
+		},
+		{
+			name:    "NotFound",
+			eventID: event.ID,
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetEvent(gomock.Any(), gomock.Eq(event.ID)).
+					Times(1).
+					Return(db.Event{}, sql.ErrNoRows)
+			},
+			checkResponse: func(t *testing.T, recorder *http.Response) {
+				require.Equal(t, http.StatusNotFound, recorder.StatusCode)
+			},
+		},
+	}
 
-	store := mockdb.NewMockStore(ctrl)
+	for i := range testCases {
+		tc := testCases[i]
 
-	//builds stubs
-	store.EXPECT().
-		GetEvent(gomock.Any(), gomock.Eq(event.ID)).
-		Times(1).
-		Return(event, nil)
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
 
-	//Start test
-	server := NewServer(store)
+			defer ctrl.Finish()
 
-	url := fmt.Sprintf("/event/%d", event.ID)
-	request, err := http.NewRequest(http.MethodGet, url, nil)
-	require.NoError(t, err)
+			store := mockdb.NewMockStore(ctrl)
+			tc.buildStubs(store)
+			server := NewServer(store)
 
-	recorder, err := server.router.Test(request)
-	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, recorder.StatusCode)
+			url := fmt.Sprintf("/event/%d", event.ID)
+			request, err := http.NewRequest(http.MethodGet, url, nil)
+			require.NoError(t, err)
+
+			recorder, err := server.router.Test(request)
+			require.NoError(t, err)
+			tc.checkResponse(t, recorder)
+		})
+	}
 }
 
 func RandomEvent() db.Event {
@@ -50,12 +87,19 @@ func RandomEvent() db.Event {
 	}
 }
 
-// ID        int64                 `json:"id"`
-//     CreatedAt time.Time             `json:"created_at"`
-//     UpdatedAt sql.NullTime          `json:"updated_at"`
-//     DeletedAt sql.NullTime          `json:"deleted_at"`
-//     Name      string                `json:"name"`
-//     Date      sql.NullTime          `json:"date"`
-//     Location  string                `json:"location"`
-//     Capacity  int32                 `json:"capacity"`
-//     Seats     pqtype.NullRawMessage `json:"seats"`
+type EventWrapper struct {
+	Message db.Event `json:"message"`
+	Status  string   `json:"status"`
+}
+
+func requireBodyMatch(t *testing.T, body *io.ReadCloser, event db.Event) {
+	data, err := io.ReadAll(*body)
+	require.NoError(t, err)
+	var gotEvent EventWrapper
+	err = json.Unmarshal(data, &gotEvent)
+	if !gotEvent.Message.Seats.Valid {
+		gotEvent.Message.Seats.RawMessage = nil
+	}
+	require.NoError(t, err)
+	require.Equal(t, event, gotEvent.Message)
+}
