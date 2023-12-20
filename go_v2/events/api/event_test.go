@@ -51,6 +51,19 @@ func TestGetAccount(t *testing.T) {
 				require.Equal(t, http.StatusNotFound, recorder.StatusCode)
 			},
 		},
+		{
+			name:    "InternalError",
+			eventID: event.ID,
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetEvent(gomock.Any(), gomock.Eq(event.ID)).
+					Times(1).
+					Return(db.Event{}, sql.ErrConnDone)
+			},
+			checkResponse: func(t *testing.T, recorder *http.Response) {
+				require.Equal(t, http.StatusInternalServerError, recorder.StatusCode)
+			},
+		},
 	}
 
 	for i := range testCases {
@@ -65,7 +78,7 @@ func TestGetAccount(t *testing.T) {
 			tc.buildStubs(store)
 			server := NewServer(store)
 
-			url := fmt.Sprintf("/event/%d", event.ID)
+			url := fmt.Sprintf("/event/%d", tc.eventID)
 			request, err := http.NewRequest(http.MethodGet, url, nil)
 			require.NoError(t, err)
 

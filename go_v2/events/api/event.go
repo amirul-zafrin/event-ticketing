@@ -1,6 +1,8 @@
 package api
 
 import (
+	"database/sql"
+
 	db "github.com/amirul-zafrin/event/db/sqlc"
 	"github.com/gofiber/fiber/v2"
 )
@@ -32,7 +34,10 @@ func (server *Server) GetEvent(c *fiber.Ctx) error {
 
 	event, err := server.store.GetEvent(c.Context(), int64(id))
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(err)
+		if err == sql.ErrNoRows {
+			return c.Status(fiber.StatusNotFound).JSON(err)
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(err)
 	}
 
 	return c.Status(200).JSON(fiber.Map{
